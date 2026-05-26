@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"^$\" /Users/hnigam/Desktop/projects/sarkari-job-bot/.env)",
+      "Bash(mkdir -p /Users/hnigam/Desktop/projects/sarkari-job-bot/src/utils /Users/hnigam/Desktop/projects/sarkari-job-bot/src/config)",
+      "Bash(npm uninstall *)"
+    ],
+    "additionalDirectories": [
+      "/Users/hnigam/Desktop/projects/sarkari-job-bot/src"
+    ]
+  }
+}
