@@ -1,6 +1,6 @@
 const { Markup } = require('telegraf');
 const User = require('../models/User');
-const { CATEGORIES } = require('../config/constants');
+const { CATEGORIES, PAID_PLANS_ENABLED } = require('../config/constants');
 
 module.exports = (bot) => {
   bot.start(async (ctx) => {
@@ -18,13 +18,16 @@ module.exports = (bot) => {
       { upsert: true, new: true }
     );
 
-    const welcome =
-      `👋 Welcome ${first_name || ''}!\n\n` +
-      `🏛️ *Sarkari Job Alerts Bot*\n` +
-      `Get instant notifications for government jobs across India.\n\n` +
+
+    const freeText = `👉 Pick a category to start. You can change later with /categories`;
+    const planText =
       `📌 *Free plan:* 3 alerts/day, 1 category\n` +
       `⚡ *Basic / Premium:* Faster alerts, unlimited categories\n\n` +
       `👉 Pick a category to start. You can change later with /categories`;
+    const welcome =
+      `👋 Welcome ${first_name || ''}!\n\n` +
+      `🏛️ *Sarkari Job Alerts Bot*\n` +
+      `Get instant notifications for government jobs across India.\n\n` + PAID_PLANS_ENABLED ? planText : freeText;
 
     const buttons = CATEGORIES.map((c) => Markup.button.callback(c, `cat:${c}`));
     const keyboard = Markup.inlineKeyboard(buttons, { columns: 2 });
