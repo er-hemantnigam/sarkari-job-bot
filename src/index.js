@@ -1,4 +1,12 @@
 require('dotenv').config();
+
+console.log('[env check]', {
+  BOT_TOKEN: process.env.BOT_TOKEN ? 'set' : 'MISSING',
+  MONGODB_URI: process.env.MONGODB_URI ? 'set' : 'MISSING',
+  ADMIN_CHAT_ID: process.env.ADMIN_CHAT_ID ? 'set' : 'MISSING',
+  NODE_ENV: process.env.NODE_ENV || 'unset'
+});
+
 const bot = require('./bot');
 const connectDB = require('./models/db');
 const { startScheduler } = require('./scheduler');
@@ -25,7 +33,13 @@ activateCommand(bot);
 
 const start = async () => {
   await connectDB();
-  await bot.launch();
+
+  // bot.launch() returns a promise that only resolves on shutdown — do NOT await it
+  bot.launch().catch((err) => {
+    console.error('Bot launch failed:', err);
+    process.exit(1);
+  });
+
   console.log('🤖 Bot is running...');
   startScheduler();
 };
