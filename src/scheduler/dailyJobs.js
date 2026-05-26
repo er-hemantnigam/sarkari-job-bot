@@ -1,8 +1,20 @@
 const bot = require('../bot');
 const User = require('../models/User');
+const Job = require('../models/Job');
 const Subscription = require('../models/Subscription');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const JOB_RETENTION_DAYS = 30;
+
+const parseJobDate = (s) => {
+  if (!s) return null;
+  const m = s.match(/(\d{1,2})[\/\-\. ](\d{1,2})[\/\-\. ](\d{2,4})/);
+  if (!m) return null;
+  let [_, dd, mm, yy] = m;
+  if (yy.length === 2) yy = '20' + yy;
+  const d = new Date(Number(yy), Number(mm) - 1, Number(dd));
+  return isNaN(d.getTime()) ? null : d;
+};
 
 const resetDailyCounters = async () => {
   const today = new Date().toISOString().split('T')[0];
@@ -73,18 +85,7 @@ const sendExpiryReminders = async () => {
 const sendLastDateReminders = async () => {
   // Premium-only "last date is tomorrow" reminders for jobs.
   // Job.lastDate is a free-form string (e.g. "15/06/2024"), so we parse loosely.
-  const Job = require('../models/Job');
   const { matchesUser } = require('../engine/matcher');
-
-  const parseDate = (s) => {
-    if (!s) return null;
-    const m = s.match(/(\d{1,2})[\/\-\. ](\d{1,2})[\/\-\. ](\d{2,4})/);
-    if (!m) return null;
-    let [_, dd, mm, yy] = m;
-    if (yy.length === 2) yy = '20' + yy;
-    const d = new Date(Number(yy), Number(mm) - 1, Number(dd));
-    return isNaN(d.getTime()) ? null : d;
-  };
 
   const tomorrow = new Date();
   tomorrow.setHours(0, 0, 0, 0);
@@ -93,7 +94,7 @@ const sendLastDateReminders = async () => {
 
   const jobs = await Job.find({ lastDate: { $ne: null } }).limit(500);
   const dueJobs = jobs.filter((j) => {
-    const d = parseDate(j.lastDate);
+    const d = parseJobDate(j.lastDate);
     return d && d >= tomorrow && d < dayAfter;
   });
 
@@ -130,13 +131,43 @@ const sendLastDateReminders = async () => {
   console.log(`[Daily] Sent ${sent} last-date reminders (premium).`);
 };
 
+const cleanupOldJobs = async () => {
+  const cutoff = new Date(Date.now() - JOB_RETENTION_DAYS * DAY_MS);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const candidates = await Job.find({
+    notified: true,
+    foundAt: { $lt: cutoff }
+  })
+    .select('_id lastDate')
+    .limit(1000);
+
+  const deleteIds = candidates
+    .filter((job) => {
+      const lastDate = parseJobDate(job.lastDate);
+      if (!job.lastDate) return true;
+      return lastDate && lastDate < today;
+    })
+    .map((job) => job._id);
+
+  if (deleteIds.length === 0) {
+    console.log('[Daily] No old jobs to clean up.');
+    return;
+  }
+
+  const res = await Job.deleteMany({ _id: { $in: deleteIds } });
+  console.log(`[Daily] Cleaned up ${res.deletedCount} old jobs.`);
+};
+
 const runDailyJobs = async () => {
   console.log('[Daily] Running daily jobs...');
   await resetDailyCounters();
   await downgradeExpired();
   await sendExpiryReminders();
   await sendLastDateReminders();
+  await cleanupOldJobs();
   console.log('[Daily] Done.');
 };
 
-module.exports = { runDailyJobs };
+module.exports = { runDailyJobs, cleanupOldJobs, parseJobDate };
