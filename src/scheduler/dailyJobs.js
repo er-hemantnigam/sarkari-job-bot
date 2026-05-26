@@ -16,7 +16,7 @@ const resetDailyCounters = async () => {
 const downgradeExpired = async () => {
   const now = new Date();
   const expired = await User.find({
-    plan: { $in: ['basic', 'premium'] },
+    plan: 'premium',
     expiresAt: { $lte: now }
   });
 
@@ -51,7 +51,7 @@ const sendExpiryReminders = async () => {
   const in3Days = new Date(now.getTime() + 3 * DAY_MS);
 
   const users = await User.find({
-    plan: { $in: ['basic', 'premium'] },
+    plan: 'premium',
     expiresAt: { $gte: in2Days, $lt: in3Days }
   });
 

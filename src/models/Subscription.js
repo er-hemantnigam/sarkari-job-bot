@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const SubscriptionSchema = new mongoose.Schema({
   telegramId:   { type: Number, required: true },
-  plan:         { type: String, enum: ['basic', 'premium'], required: true },
+  plan:         { type: String, enum: ['premium'], required: true },
   amount:       { type: Number, required: true },  // in rupees
 
   // Payment details

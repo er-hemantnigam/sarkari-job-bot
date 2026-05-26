@@ -10,7 +10,7 @@ const UserSchema = new mongoose.Schema({
   firstName:    { type: String, default: null },
 
   // Subscription
-  plan:         { type: String, enum: ['free', 'basic', 'premium'], default: 'free' },
+  plan:         { type: String, enum: ['free', 'premium'], default: 'free' },
   expiresAt:    { type: Date, default: null },
 
   // Preferences

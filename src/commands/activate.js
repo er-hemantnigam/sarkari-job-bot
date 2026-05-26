@@ -10,17 +10,15 @@ module.exports = (bot) => {
     }
 
     const args = ctx.message.text.split(/\s+/).slice(1);
-    if (args.length < 2) {
-      return ctx.reply('Usage: /activate <telegramId> <basic|premium> [days=30]');
+    if (args.length < 1) {
+      return ctx.reply('Usage: /activate <telegramId> [days=30]');
     }
 
-    const [tgIdStr, plan, daysStr] = args;
+    const [tgIdStr, daysStr] = args;
     const tgId = Number(tgIdStr);
     const days = Number(daysStr) || 30;
+    const plan = 'premium';
 
-    if (!['basic', 'premium'].includes(plan)) {
-      return ctx.reply('Plan must be "basic" or "premium".');
-    }
     if (!Number.isFinite(tgId)) {
       return ctx.reply('Invalid telegramId.');
     }

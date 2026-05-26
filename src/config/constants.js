@@ -50,13 +50,11 @@ module.exports = {
   ],
 
   PLAN_LIMITS: {
-    free:    { dailyAlerts: 3,        delayMinutes: 0, multiCategory: false }, //360
-    basic:   { dailyAlerts: Infinity, delayMinutes: 0,  multiCategory: true  }, //30
-    premium: { dailyAlerts: Infinity, delayMinutes: 0,   multiCategory: true  }
+    free:    { dailyAlerts: 3,        delayMinutes: 0, multiCategory: false },
+    premium: { dailyAlerts: Infinity, delayMinutes: 0, multiCategory: true  }
   },
 
   PRICES: {
-    basic:   Number(process.env.BASIC_PRICE)   || 49,
-    premium: Number(process.env.PREMIUM_PRICE) || 99
+    premium: Number(process.env.PREMIUM_PRICE) || 49
   }
 };

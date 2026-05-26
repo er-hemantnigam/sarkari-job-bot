@@ -12,26 +12,21 @@ module.exports = (bot) => {
     if (!user) return ctx.reply('Please send /start first.');
 
     await ctx.replyWithMarkdown(
-      `💎 *Upgrade Your Plan*\n\n` +
-        `*BASIC — ₹${PRICES.basic}/month*\n` +
-        `  • Unlimited alerts/day\n` +
-        `  • 30-min delay\n` +
-        `  • Multiple categories\n` +
-        `  • Admit card alerts\n\n` +
+      `💎 *Upgrade to Premium*\n\n` +
         `*PREMIUM — ₹${PRICES.premium}/month*\n` +
         `  • Instant alerts\n` +
+        `  • Unlimited alerts/day\n` +
+        `  • Multiple categories\n` +
         `  • Last-date reminders\n` +
-        `  • Result alerts\n` +
-        `  • All Basic features\n\n` +
-        `Choose a plan:`,
+        `  • Admit card alerts\n` +
+        `  • Result alerts`,
       Markup.inlineKeyboard([
-        [Markup.button.callback(`Basic ₹${PRICES.basic}`, 'sub:basic')],
-        [Markup.button.callback(`Premium ₹${PRICES.premium}`, 'sub:premium')]
+        [Markup.button.callback(`Get Premium ₹${PRICES.premium}`, 'sub:premium')]
       ])
     );
   });
 
-  bot.action(/^sub:(basic|premium)$/, async (ctx) => {
+  bot.action(/^sub:(premium)$/, async (ctx) => {
     const plan = ctx.match[1];
     const amount = PRICES[plan];
 
