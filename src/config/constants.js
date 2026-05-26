@@ -50,8 +50,8 @@ module.exports = {
   ],
 
   PLAN_LIMITS: {
-    free:    { dailyAlerts: 3,        delayMinutes: 360, multiCategory: false },
-    basic:   { dailyAlerts: Infinity, delayMinutes: 30,  multiCategory: true  },
+    free:    { dailyAlerts: 3,        delayMinutes: 0, multiCategory: false }, //360
+    basic:   { dailyAlerts: Infinity, delayMinutes: 0,  multiCategory: true  }, //30
     premium: { dailyAlerts: Infinity, delayMinutes: 0,   multiCategory: true  }
   },
 
