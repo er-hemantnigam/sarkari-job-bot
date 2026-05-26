@@ -1,13 +1,24 @@
 const { Markup } = require('telegraf');
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
-const { PRICES } = require('../config/constants');
+const { PRICES, PAID_PLANS_ENABLED } = require('../config/constants');
 
 const UPI_ID = process.env.UPI_ID || 'your-upi@bank';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
 module.exports = (bot) => {
   bot.command('subscribe', async (ctx) => {
+    if (!PAID_PLANS_ENABLED) {
+      return ctx.replyWithMarkdown(
+        `🎉 *Good news — the bot is currently free for everyone!*\n\n` +
+          `Enjoy:\n` +
+          `  • Unlimited alerts\n` +
+          `  • Instant notifications\n` +
+          `  • Multiple categories\n\n` +
+          `Paid plans will arrive later. For now: pick your categories with /categories and you're set.`
+      );
+    }
+
     const user = await User.findOne({ telegramId: ctx.from.id });
     if (!user) return ctx.reply('Please send /start first.');
 
@@ -27,6 +38,8 @@ module.exports = (bot) => {
   });
 
   bot.action(/^sub:(premium)$/, async (ctx) => {
+    if (!PAID_PLANS_ENABLED) return ctx.answerCbQuery('Paid plans are currently disabled.');
+
     const plan = ctx.match[1];
     const amount = PRICES[plan];
 
@@ -46,6 +59,7 @@ module.exports = (bot) => {
   });
 
   bot.on('photo', async (ctx) => {
+    if (!PAID_PLANS_ENABLED) return;
     if (ctx.session?.step !== 'awaiting_screenshot') return;
 
     const plan = ctx.session.pendingPlan;
@@ -77,7 +91,7 @@ module.exports = (bot) => {
             `Telegram ID: \`${ctx.from.id}\`\n` +
             `Plan: ${plan.toUpperCase()}\n` +
             `Amount: ₹${amount}\n\n` +
-            `Activate with: \`/activate ${ctx.from.id} ${plan}\``,
+            `Activate with: \`/activate ${ctx.from.id}\``,
           parse_mode: 'Markdown'
         });
       } catch (err) {
