@@ -86,6 +86,7 @@ const processPendingJobs = async () => {
 
     for (const user of users) {
       if (sentTo.has(user.telegramId)) continue;
+      if (new Date(job.foundAt) < new Date(user.joinedAt)) continue;
       if (!matchesUser(user, job)) continue;
       if (!isJobReady(user, job)) continue;
       if (!canSendNow(user)) continue;
