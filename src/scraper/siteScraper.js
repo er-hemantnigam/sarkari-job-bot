@@ -23,36 +23,55 @@ const safeGet = async (url) => {
 const absolutize = (href, base) => {
   if (!href) return null;
   try {
-    return new URL(href, base).toString();
+    return new URL(href.trim(), base).toString();
   } catch (_) {
-    return href;
+    return href.trim();
   }
 };
 
-const scrapeSSC = async () => {
-  const url = 'https://ssc.gov.in/home/notice-board';
+const cleanText = (s) => (s || '').replace(/\s+/g, ' ').trim();
+
+const findSectionBox = ($, headingText) =>
+  $('div#heading a')
+    .filter((_, el) => cleanText($(el).text()).toLowerCase() === headingText.toLowerCase())
+    .first()
+    .closest('div[id^="box"]');
+
+const extractSectionLinks = ($, url, headingText, section, limit = 40) => {
+  const box = findSectionBox($, headingText);
+  if (box.length === 0) return [];
+
+  const items = [];
+  box.find('div#post')
+    .first()
+    .find('a')
+    .each((_, el) => {
+      const title = cleanText($(el).text());
+      const href = $(el).attr('href');
+      if (!title || title.length < 10 || !href) return;
+
+      items.push({
+        title,
+        link: absolutize(href, url),
+        source: `sarkariresult.com - ${section}`,
+        description: `${section}: ${title}`
+      });
+    });
+
+  return items.slice(0, limit);
+};
+
+const scrapeSarkariResult = async () => {
+  const url = 'https://www.sarkariresult.com/';
   const html = await safeGet(url);
   if (!html) return [];
 
   const $ = cheerio.load(html);
-  const items = [];
-
-  $('a').each((_, el) => {
-    const title = $(el).text().trim().replace(/\s+/g, ' ');
-    const href = $(el).attr('href');
-    if (!title || title.length < 15) return;
-    const lower = title.toLowerCase();
-    if (!/(notice|notification|recruit|exam|admit|result|vacanc|advt)/.test(lower)) return;
-
-    items.push({
-      title,
-      link: absolutize(href, url),
-      source: 'ssc.gov.in',
-      description: title
-    });
-  });
-
-  return items.slice(0, 50);
+  return [
+    ...extractSectionLinks($, url, 'Result', 'Result'),
+    ...extractSectionLinks($, url, 'Admit Card', 'Admit Card'),
+    ...extractSectionLinks($, url, 'Latest Jobs', 'Latest Jobs')
+  ];
 };
 
 const scrapeFreeJobAlert = async () => {
@@ -121,12 +140,17 @@ const saveJobs = async (rawJobs) => {
 
 const scrapeAllSites = async () => {
   console.log('[Scrape] Scraping sites...');
-  const [ssc, fja] = await Promise.all([scrapeSSC(), scrapeFreeJobAlert()]);
-  const all = [...ssc, ...fja];
-  console.log(`[Scrape] Pulled ${ssc.length} SSC + ${fja.length} FreeJobAlert items`);
+  const [sarkariResult, fja] = await Promise.all([
+    scrapeSarkariResult(),
+    scrapeFreeJobAlert()
+  ]);
+  const all = [...sarkariResult, ...fja];
+  console.log(
+    `[Scrape] Pulled ${sarkariResult.length} SarkariResult + ${fja.length} FreeJobAlert items`
+  );
   const saved = await saveJobs(all);
   console.log(`[Scrape] Saved ${saved} new jobs`);
   return saved;
 };
 
-module.exports = { scrapeAllSites, scrapeSSC, scrapeFreeJobAlert };
+module.exports = { scrapeAllSites, scrapeSarkariResult, scrapeFreeJobAlert };
