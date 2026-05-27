@@ -12,7 +12,21 @@ const MAX_DELAY_MINUTES = Math.max(
 const escapeMd = (s) =>
   (s || '').replace(/[_*`\[\]()~>#+=|{}.!-]/g, (m) => `\\${m}`);
 
+const formatPostedDate = (date) => {
+  if (!date) return null;
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+
+  return new Intl.DateTimeFormat('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Kolkata'
+  }).format(d);
+};
+
 const formatJobMessage = (job) => {
+  const postedDate = formatPostedDate(job.postedAt);
   const parts = [
     `🔔 *New Job Alert*`,
     ``,
@@ -22,6 +36,7 @@ const formatJobMessage = (job) => {
     `🎓 Qualification: ${escapeMd(job.qualification)}`
   ];
   if (job.vacancies) parts.push(`👥 Vacancies: ${escapeMd(job.vacancies)}`);
+  if (postedDate)    parts.push(`🗓️ Posted: ${escapeMd(postedDate)}`);
   if (job.lastDate)  parts.push(`📅 Last Date: ${escapeMd(job.lastDate)}`);
   if (job.link)      parts.push(`\n🔗 [Apply / Details](${job.link})`);
   parts.push(`\n_Source: ${escapeMd(job.source)}_`);

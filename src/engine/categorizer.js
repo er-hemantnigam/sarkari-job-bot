@@ -24,8 +24,8 @@ const QUAL_KEYWORDS = {
 
 const lower = (s) => (s || '').toLowerCase();
 
-const detectCategory = (title) => {
-  const t = lower(title);
+const detectCategory = (title, source = '') => {
+  const t = `${lower(title)} ${lower(source)}`;
   for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     if (keywords.some((k) => t.includes(k))) return cat;
   }
@@ -66,7 +66,7 @@ const categorizeJob = (job) => {
   const blob = `${job.title || ''} ${job.description || ''}`;
   return {
     ...job,
-    category: detectCategory(job.title),
+    category: detectCategory(job.title, job.source),
     state: detectState(job.title),
     qualification: detectQualification(blob),
     lastDate: job.lastDate || detectLastDate(blob),

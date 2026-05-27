@@ -21,6 +21,7 @@ const JobSchema = new mongoose.Schema({
   notifiedUsers: { type: [Number], default: [] }, // telegramIds already sent
 
   // Meta
+  postedAt:   { type: Date, default: null },
   foundAt:    { type: Date, default: Date.now }
 });
 

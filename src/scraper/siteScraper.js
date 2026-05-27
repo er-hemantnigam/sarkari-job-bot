@@ -31,6 +31,18 @@ const absolutize = (href, base) => {
 
 const cleanText = (s) => (s || '').replace(/\s+/g, ' ').trim();
 
+const buildSscAttachmentUrl = (notice) => {
+  if (notice.redirectUrl) {
+    return absolutize(notice.redirectUrl, 'https://ssc.gov.in/');
+  }
+
+  const attachment = notice.attachments?.[0];
+  if (!attachment?.path) return null;
+
+  const path = attachment.path.replace(/\\/g, '/').replace(/^\/+/, '');
+  return `https://ssc.gov.in/api/attachment/${encodeURI(path)}`;
+};
+
 const findSectionBox = ($, headingText) =>
   $('div#heading a')
     .filter((_, el) => cleanText($(el).text()).toLowerCase() === headingText.toLowerCase())
@@ -104,6 +116,51 @@ const scrapeFreeJobAlert = async () => {
   }).slice(0, 60);
 };
 
+const scrapeSscNoticeBoard = async () => {
+  const url = 'https://ssc.gov.in/api/general-website/portal/records';
+  const params = {
+    page: 1,
+    limit: 20,
+    contentType: 'notice-boards',
+    key: 'createdAt',
+    order: 'DESC',
+    isPaginationRequired: true,
+    isAttachment: true,
+    language: 'english',
+    attributes: 'id,headline,examId,contentType,startDate,endDate,language,createdAt'
+  };
+
+  try {
+    const { data } = await axios.get(url, { headers: HEADERS, params, timeout: 20000 });
+    const notices = Array.isArray(data?.data) ? data.data : [];
+
+    return notices
+      .map((notice) => {
+        const title = cleanText(notice.headline);
+        if (!title) return null;
+
+        const attachment = notice.attachments?.[0];
+        const link = buildSscAttachmentUrl(notice);
+        const fileSize = attachment?.size
+          ? ` (${(attachment.size / 1024).toFixed(2)} KB)`
+          : '';
+
+        return {
+          title,
+          link,
+          source: 'ssc.gov.in - Notice Board',
+          description: `SSC Notice Board: ${title}${fileSize}`,
+          lastDate: notice.endDate || null,
+          postedAt: notice.createdAt ? new Date(notice.createdAt) : null
+        };
+      })
+      .filter(Boolean);
+  } catch (err) {
+    console.error('[Scrape] SSC notice board failed:', err.message);
+    return [];
+  }
+};
+
 const saveJobs = async (rawJobs) => {
   let saved = 0;
   for (const raw of rawJobs) {
@@ -124,6 +181,7 @@ const saveJobs = async (rawJobs) => {
             qualification: tagged.qualification,
             lastDate: tagged.lastDate,
             vacancies: tagged.vacancies,
+            postedAt: tagged.postedAt,
             hash,
             foundAt: new Date()
           }
@@ -140,17 +198,23 @@ const saveJobs = async (rawJobs) => {
 
 const scrapeAllSites = async () => {
   console.log('[Scrape] Scraping sites...');
-  const [sarkariResult, fja] = await Promise.all([
+  const [sarkariResult, fja, sscNoticeBoard] = await Promise.all([
     scrapeSarkariResult(),
-    scrapeFreeJobAlert()
+    scrapeFreeJobAlert(),
+    scrapeSscNoticeBoard()
   ]);
-  const all = [...sarkariResult, ...fja];
+  const all = [...sarkariResult, ...fja, ...sscNoticeBoard];
   console.log(
-    `[Scrape] Pulled ${sarkariResult.length} SarkariResult + ${fja.length} FreeJobAlert items`
+    `[Scrape] Pulled ${sarkariResult.length} SarkariResult + ${fja.length} FreeJobAlert + ${sscNoticeBoard.length} SSC Notice Board items`
   );
   const saved = await saveJobs(all);
   console.log(`[Scrape] Saved ${saved} new jobs`);
   return saved;
 };
 
-module.exports = { scrapeAllSites, scrapeSarkariResult, scrapeFreeJobAlert };
+module.exports = {
+  scrapeAllSites,
+  scrapeSarkariResult,
+  scrapeFreeJobAlert,
+  scrapeSscNoticeBoard
+};
