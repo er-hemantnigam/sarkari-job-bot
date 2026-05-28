@@ -5,6 +5,7 @@ const CATEGORY_KEYWORDS = {
   Railway:      ['railway', 'rrb', 'rrc', 'indian railways', 'ntpc', 'alp', 'group d'],
   Banking:      ['bank', 'ibps', 'sbi', 'rbi', 'nabard', 'sidbi', 'po ', 'clerk', 'po,', 'po.'],
   UPSC:         ['upsc', 'ias', 'ips', 'civil services', 'union public service'],
+  NTA:          ['nta', 'national testing agency', 'neet', 'jee main', 'cuet', 'ugc net', 'jipmat', 'csir net'],
   Defence:      ['army', 'navy', 'air force', 'iaf', 'defence', 'defense', 'bsf', 'crpf', 'cisf', 'itbp', 'ssb', 'nda', 'cds', 'agniveer', 'agnipath'],
   Teaching:     ['teacher', 'teaching', 'tet', 'ctet', 'professor', 'lecturer', 'kvs', 'nvs', 'dsssb teacher'],
   Police:       ['police', 'constable', 'si ', 'sub inspector', 'sub-inspector', 'home guard'],

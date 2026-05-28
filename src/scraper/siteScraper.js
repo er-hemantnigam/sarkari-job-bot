@@ -161,6 +161,92 @@ const scrapeSscNoticeBoard = async () => {
   }
 };
 
+const scrapeUpsc = async () => {
+  const url = 'https://www.upsc.gov.in/whats-new';
+  const html = await safeGet(url);
+  if (!html) return [];
+
+  const $ = cheerio.load(html);
+  const items = [];
+
+  $('.views-row').each((_, el) => {
+    const anchor = $(el).find('.field-content a');
+    if (anchor.length === 0) return;
+
+    const title = cleanText(anchor.text());
+    const href = anchor.attr('href');
+
+    if (!title || !href) return;
+
+    items.push({
+      title,
+      link: absolutize(href, url),
+      source: 'upsc.gov.in',
+      description: `UPSC What's New: ${title}`
+    });
+  });
+
+  return items.slice(0, 40);
+};
+
+const scrapeNta = async () => {
+  const url = 'https://nta.ac.in/NoticeBoardArchive';
+  const html = await safeGet(url);
+  if (!html) return [];
+
+  const $ = cheerio.load(html);
+  const items = [];
+
+  $('#tbl tbody tr').each((_, el) => {
+    const cells = $(el).find('td');
+    if (cells.length < 3) return;
+
+    const title = cleanText($(cells[1]).find('content').text());
+    const href = $(cells[2]).find('a').attr('href');
+
+    if (!title || !href) return;
+
+    items.push({
+      title,
+      link: absolutize(href, 'https://nta.ac.in'),
+      source: 'nta.ac.in',
+      description: `NTA Notice: ${title}`
+    });
+  });
+
+  return items.slice(0, 40);
+};
+
+const scrapeRrb = async () => {
+  const url = 'https://www.rrbcdg.gov.in/employment-notices.php';
+  const html = await safeGet(url);
+  if (!html) return [];
+
+  const $ = cheerio.load(html);
+  const items = [];
+
+  $('table tr').each((_, el) => {
+    const cells = $(el).find('td');
+    if (cells.length < 2) return;
+
+    const cenNo = cleanText($(cells[0]).text());
+    const anchor = $(cells[1]).find('a');
+    const title = cleanText(anchor.text());
+    const href = anchor.attr('href');
+
+    if (!title || !href || !cenNo || cenNo.toLowerCase() === 'cen no.') return;
+
+    items.push({
+      title: `${cenNo}: ${title}`,
+      link: absolutize(href, 'https://www.rrbcdg.gov.in/'),
+      source: 'rrbcdg.gov.in',
+      description: `RRB Notice ${cenNo}: ${title}`
+    });
+  });
+
+  return items.slice(0, 30);
+};
+
 const saveJobs = async (rawJobs) => {
   let saved = 0;
   for (const raw of rawJobs) {
@@ -198,14 +284,17 @@ const saveJobs = async (rawJobs) => {
 
 const scrapeAllSites = async () => {
   console.log('[Scrape] Scraping sites...');
-  const [sarkariResult, fja, sscNoticeBoard] = await Promise.all([
+  const [sarkariResult, fja, sscNoticeBoard, upsc, nta, rrb] = await Promise.all([
     scrapeSarkariResult(),
     scrapeFreeJobAlert(),
-    scrapeSscNoticeBoard()
+    scrapeSscNoticeBoard(),
+    scrapeUpsc(),
+    scrapeNta(),
+    scrapeRrb()
   ]);
-  const all = [...sarkariResult, ...fja, ...sscNoticeBoard];
+  const all = [...sarkariResult, ...fja, ...sscNoticeBoard, ...upsc, ...nta, ...rrb];
   console.log(
-    `[Scrape] Pulled ${sarkariResult.length} SarkariResult + ${fja.length} FreeJobAlert + ${sscNoticeBoard.length} SSC Notice Board items`
+    `[Scrape] Pulled ${sarkariResult.length} SarkariResult + ${fja.length} FreeJobAlert + ${sscNoticeBoard.length} SSC + ${upsc.length} UPSC + ${nta.length} NTA + ${rrb.length} RRB items`
   );
   const saved = await saveJobs(all);
   console.log(`[Scrape] Saved ${saved} new jobs`);
@@ -216,5 +305,8 @@ module.exports = {
   scrapeAllSites,
   scrapeSarkariResult,
   scrapeFreeJobAlert,
-  scrapeSscNoticeBoard
+  scrapeSscNoticeBoard,
+  scrapeUpsc,
+  scrapeNta,
+  scrapeRrb
 };

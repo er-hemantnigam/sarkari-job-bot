@@ -14,6 +14,7 @@ module.exports = {
     'Railway',
     'Banking',
     'UPSC',
+    'NTA',
     'Defence',
     'Teaching',
     'Police',
